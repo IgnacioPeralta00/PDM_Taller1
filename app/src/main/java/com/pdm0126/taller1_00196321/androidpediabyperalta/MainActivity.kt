@@ -16,7 +16,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -32,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -151,6 +151,27 @@ fun Welcome(modifier: Modifier = Modifier, onStartQuiz: () -> Unit) {
 }
 
 @Composable
+fun ProgressAndScore(
+    progress: Int,
+    score: Int
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = "Pregunta $progress de 3",
+            style = MaterialTheme.typography.labelLarge
+        )
+        Text(
+            text = "Puntaje: $score / 3",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
 fun Quiz(
     modifier: Modifier = Modifier,
     currentIndex: Int,
@@ -192,8 +213,8 @@ fun Quiz(
             currentQuestion.options.forEach { option ->
                 val containerColor = when {
                     !isAnswered -> MaterialTheme.colorScheme.primaryContainer
-                    option == currentQuestion.correctAnswer -> Color.Green
-                    option == selectedOption -> Color.Red
+                    option == currentQuestion.correctAnswer -> colorResource(R.color.light_green)
+                    option == selectedOption -> colorResource(R.color.light_red)
                     else -> MaterialTheme.colorScheme.surfaceVariant
                 }
 
@@ -236,27 +257,6 @@ fun Quiz(
         } else {
             Spacer(modifier = Modifier.weight(1f))
         }
-    }
-}
-
-@Composable
-fun ProgressAndScore(
-    progress: Int,
-    score: Int
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = "Pregunta $progress de 3",
-            style = MaterialTheme.typography.labelLarge
-        )
-        Text(
-            text = "Puntaje: $score / 3",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold
-        )
     }
 }
 
