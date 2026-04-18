@@ -78,8 +78,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AndroidPediaByPeralta(modifier: Modifier = Modifier) {
     var screen by remember { mutableStateOf("welcome") }
-    var currentIndex by remember { mutableIntStateOf(0) }
-    var score by remember { mutableIntStateOf(0) }
+    // var currentIndex by remember { mutableIntStateOf(0) }
+    // var score by remember { mutableIntStateOf(0) }
 
     when (screen) {
         "welcome" -> Welcome(
@@ -88,7 +88,8 @@ fun AndroidPediaByPeralta(modifier: Modifier = Modifier) {
         )
         "quiz" -> Quiz(
             modifier = modifier,
-            currentIndex = currentIndex,
+            onNextQuestion = { screen = "results" }
+            /*currentIndex = currentIndex,
             score = score,
             onAnswerCorrect = { score++ },
             onNextQuestion = {
@@ -97,7 +98,7 @@ fun AndroidPediaByPeralta(modifier: Modifier = Modifier) {
                 } else {
                     screen = "results"
                 }
-            }
+            }*/
         )
         "results" -> ResultScreen(
             modifier = modifier,
@@ -105,7 +106,7 @@ fun AndroidPediaByPeralta(modifier: Modifier = Modifier) {
             onRestart = {
                 currentIndex = 0
                 score = 0
-                screen = "welcome"
+                screen = "Quiz"
             }
         )
     }
@@ -172,16 +173,82 @@ fun ProgressAndScore(
 }
 
 @Composable
+fun ButtonOptions(
+        currentQuestion: Question,
+        selectedOption: String?,
+        isAnswered: Boolean,
+        onButtonSelected: (selectedOption: String, isAnswered: Boolean) -> Unit)
+{
+
+    //var selectedOption by remember(currentIndex) { mutableStateOf<String?>(null) }
+    //var isAnswered by remember(currentIndex) { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        currentQuestion.options.forEach { option ->
+            val containerColor = when {
+                !isAnswered -> MaterialTheme.colorScheme.primaryContainer
+                option == currentQuestion.correctAnswer -> colorResource(R.color.light_green)
+                option == selectedOption -> colorResource(R.color.light_red)
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+
+            val contentColor = if (isAnswered && (option == currentQuestion.correctAnswer || option == selectedOption))
+                Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+
+            Button(
+                onClick = {
+                    if (!isAnswered) {
+                        onButtonSelected(option, true)
+                        /*selectedOption = option
+                        isAnswered = true
+                        if (option == currentQuestion.correctAnswer) score++*/
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isAnswered || option == selectedOption || option == currentQuestion.correctAnswer,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = containerColor,
+                    contentColor = contentColor,
+                    disabledContainerColor = containerColor,
+                    disabledContentColor = contentColor
+                )
+            ) {
+                Text(text = option)
+            }
+        }
+    }
+}
+
+@Composable
+fun QuestionCard(currentQuestion: Question) {
+
+    // val currentQuestion = quizQuestions[currentIndex]
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = currentQuestion.question,
+            modifier = Modifier.padding(24.dp),
+            style = MaterialTheme.typography.titleLarge,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
 fun Quiz(
     modifier: Modifier = Modifier,
-    currentIndex: Int,
-    score: Int,
-    onAnswerCorrect: () -> Unit,
     onNextQuestion: () -> Unit
 ) {
-    val currentQuestion = quizQuestions[currentIndex]
+    var currentIndex by remember { mutableIntStateOf(0) }
     var selectedOption by remember(currentIndex) { mutableStateOf<String?>(null) }
     var isAnswered by remember(currentIndex) { mutableStateOf(false) }
+    var score by remember { mutableIntStateOf(0) }
+
+    val currentQuestion = quizQuestions[currentIndex]
 
     Column(
         modifier = modifier
@@ -195,53 +262,19 @@ fun Quiz(
             score = score
         )
 
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = currentQuestion.question,
-                modifier = Modifier.padding(24.dp),
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center
-            )
-        }
+        QuestionCard(currentQuestion = currentQuestion)
 
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            currentQuestion.options.forEach { option ->
-                val containerColor = when {
-                    !isAnswered -> MaterialTheme.colorScheme.primaryContainer
-                    option == currentQuestion.correctAnswer -> colorResource(R.color.light_green)
-                    option == selectedOption -> colorResource(R.color.light_red)
-                    else -> MaterialTheme.colorScheme.surfaceVariant
-                }
-
-                val contentColor = if (isAnswered && (option == currentQuestion.correctAnswer || option == selectedOption))
-                    Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-
-                Button(
-                    onClick = {
-                        if (!isAnswered) {
-                            selectedOption = option
-                            isAnswered = true
-                            if (option == currentQuestion.correctAnswer) onAnswerCorrect()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isAnswered || option == selectedOption || option == currentQuestion.correctAnswer,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = containerColor,
-                        contentColor = contentColor,
-                        disabledContainerColor = containerColor,
-                        disabledContentColor = contentColor
-                    )
-                ) {
-                    Text(text = option)
-                }
+        ButtonOptions(
+            currentQuestion = currentQuestion,
+            selectedOption = selectedOption,
+            isAnswered = isAnswered,
+            onButtonSelected = { option, booleanState ->
+                selectedOption = option
+                isAnswered = booleanState
+                if (option == currentQuestion.correctAnswer) score++
             }
-        }
+        )
+
 
         if (isAnswered) {
             FunFact(funFact = currentQuestion.funFact)
@@ -249,7 +282,13 @@ fun Quiz(
             Spacer(modifier = Modifier.weight(1f))
             
             Button(
-                onClick = onNextQuestion,
+                onClick = {
+                    if (currentIndex < quizQuestions.size - 1) {
+                    currentIndex++
+                } else {
+                    onNextQuestion()
+                }
+                          },
                 modifier = Modifier.align(Alignment.End)
             ) {
                 Text(text = if (currentIndex < quizQuestions.size - 1) "Siguiente" else "Ver Resultado")
