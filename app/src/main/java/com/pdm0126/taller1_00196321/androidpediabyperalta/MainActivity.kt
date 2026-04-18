@@ -40,6 +40,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.pdm0126.taller1_00196321.androidpediabyperalta.ui.theme.AndroidPediaByPeraltaTheme
 
+val listSize = quizQuestions.size
+
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,8 +80,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AndroidPediaByPeralta(modifier: Modifier = Modifier) {
     var screen by remember { mutableStateOf("welcome") }
-    // var currentIndex by remember { mutableIntStateOf(0) }
-    // var score by remember { mutableIntStateOf(0) }
+    var currentIndex by remember { mutableIntStateOf(0) }
+    var score by remember { mutableIntStateOf(0) }
 
     when (screen) {
         "welcome" -> Welcome(
@@ -88,17 +90,16 @@ fun AndroidPediaByPeralta(modifier: Modifier = Modifier) {
         )
         "quiz" -> Quiz(
             modifier = modifier,
-            onNextQuestion = { screen = "results" }
-            /*currentIndex = currentIndex,
+            currentIndex = currentIndex,
             score = score,
             onAnswerCorrect = { score++ },
             onNextQuestion = {
-                if (currentIndex < quizQuestions.size - 1) {
+                if (currentIndex < listSize - 1) {
                     currentIndex++
                 } else {
                     screen = "results"
                 }
-            }*/
+            }
         )
         "results" -> ResultScreen(
             modifier = modifier,
@@ -106,7 +107,7 @@ fun AndroidPediaByPeralta(modifier: Modifier = Modifier) {
             onRestart = {
                 currentIndex = 0
                 score = 0
-                screen = "Quiz"
+                screen = "quiz"
             }
         )
     }
@@ -177,12 +178,8 @@ fun ButtonOptions(
         currentQuestion: Question,
         selectedOption: String?,
         isAnswered: Boolean,
-        onButtonSelected: (selectedOption: String, isAnswered: Boolean) -> Unit)
+        onOptionSelected: (selectedOption: String, isAnswered: Boolean) -> Unit)
 {
-
-    //var selectedOption by remember(currentIndex) { mutableStateOf<String?>(null) }
-    //var isAnswered by remember(currentIndex) { mutableStateOf(false) }
-
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -201,10 +198,7 @@ fun ButtonOptions(
             Button(
                 onClick = {
                     if (!isAnswered) {
-                        onButtonSelected(option, true)
-                        /*selectedOption = option
-                        isAnswered = true
-                        if (option == currentQuestion.correctAnswer) score++*/
+                        onOptionSelected(option, true)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -224,8 +218,6 @@ fun ButtonOptions(
 
 @Composable
 fun QuestionCard(currentQuestion: Question) {
-
-    // val currentQuestion = quizQuestions[currentIndex]
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -241,13 +233,13 @@ fun QuestionCard(currentQuestion: Question) {
 @Composable
 fun Quiz(
     modifier: Modifier = Modifier,
+    currentIndex : Int,
+    score: Int,
+    onAnswerCorrect: () -> Unit,
     onNextQuestion: () -> Unit
 ) {
-    var currentIndex by remember { mutableIntStateOf(0) }
     var selectedOption by remember(currentIndex) { mutableStateOf<String?>(null) }
     var isAnswered by remember(currentIndex) { mutableStateOf(false) }
-    var score by remember { mutableIntStateOf(0) }
-
     val currentQuestion = quizQuestions[currentIndex]
 
     Column(
@@ -268,10 +260,10 @@ fun Quiz(
             currentQuestion = currentQuestion,
             selectedOption = selectedOption,
             isAnswered = isAnswered,
-            onButtonSelected = { option, booleanState ->
+            onOptionSelected = { option, booleanState ->
                 selectedOption = option
                 isAnswered = booleanState
-                if (option == currentQuestion.correctAnswer) score++
+                if (option == currentQuestion.correctAnswer) onAnswerCorrect()
             }
         )
 
@@ -282,16 +274,10 @@ fun Quiz(
             Spacer(modifier = Modifier.weight(1f))
             
             Button(
-                onClick = {
-                    if (currentIndex < quizQuestions.size - 1) {
-                    currentIndex++
-                } else {
-                    onNextQuestion()
-                }
-                          },
+                onClick = onNextQuestion,
                 modifier = Modifier.align(Alignment.End)
             ) {
-                Text(text = if (currentIndex < quizQuestions.size - 1) "Siguiente" else "Ver Resultado")
+                Text(text = if (currentIndex < listSize - 1) "Siguiente" else "Ver Resultado")
             }
         } else {
             Spacer(modifier = Modifier.weight(1f))
