@@ -77,10 +77,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AndroidPediaByPeralta(modifier: Modifier = Modifier) {
+    // Observación (Criterio 1): ¿Por qué usar Strings planos ("welcome", "quiz", "results") para manejar el enrutamiento?
+    // Esto puede causar un bug si se escribe mal el String en alguna parte. Podría considerar usar un Enum o una Sealed Class para hacer el estado más seguro.
     var screen by remember { mutableStateOf("welcome") }
     var currentIndex by remember { mutableIntStateOf(0) }
     var score by remember { mutableIntStateOf(0) }
 
+    // Observación (Criterio 5): Estás aplicando State Hoisting de maravilla aquí.
+    // Mantener estos estados en la raíz y pasarlos como lambdas (onStartQuiz, onAnswerCorrect) a los hijos hace que los componentes sean puros y testeables.
     when (screen) {
         "welcome" -> Welcome(
             modifier = modifier,
@@ -91,6 +95,7 @@ fun AndroidPediaByPeralta(modifier: Modifier = Modifier) {
             currentIndex = currentIndex,
             score = score,
             onAnswerCorrect = { score++ },
+            // Sugerencia (Criterio 3): Esta lógica de evaluación de límites podría delegarse a una función separada en lugar de vivir directamente en la lambda de la UI.
             onNextQuestion = {
                 if (currentIndex < quizQuestions.size - 1) {
                     currentIndex++
@@ -180,6 +185,8 @@ fun Quiz(
     onNextQuestion: () -> Unit
 ) {
     val currentQuestion = quizQuestions[currentIndex]
+    // Buen trabajo (Criterio 2): ¡Excelente uso de la llave 'currentIndex' en el remember!
+    // Esto garantiza perfectamente que selectedOption e isAnswered se limpien automáticamente cada vez que pasas a una nueva pregunta.
     var selectedOption by remember(currentIndex) { mutableStateOf<String?>(null) }
     var isAnswered by remember(currentIndex) { mutableStateOf(false) }
 
@@ -210,6 +217,8 @@ fun Quiz(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Reflexión (Criterio 3): ¿Por qué calcular el color del contenedor y del contenido directamente dentro del forEach y la UI?
+            // Podría considerarse mover esta lógica condicional de colores a una función externa que simplemente reciba los estados y retorne el color adecuado, limpiando así la vista.
             currentQuestion.options.forEach { option ->
                 val containerColor = when {
                     !isAnswered -> MaterialTheme.colorScheme.primaryContainer
@@ -221,7 +230,11 @@ fun Quiz(
                 val contentColor = if (isAnswered && (option == currentQuestion.correctAnswer || option == selectedOption))
                     Color.White else MaterialTheme.colorScheme.onSurfaceVariant
 
+                // Sugerencia (Criterio 4): Este Button tiene bastantes configuraciones (colores, condicionales de enabled, lógica en el onClick).
+                // ¿Podrías considerarse extraer este botón completo a un Composable reutilizable independiente (por ejemplo, `QuizOptionButton`)?
                 Button(
+                    // Reflexión (Criterio 3): ¿Es necesario tener el bloque if y la asignación de tres variables de estado dentro del onClick?
+                    // Extraer esto a una función de manejo de eventos haría que la lectura de la UI fuera más fluida.
                     onClick = {
                         if (!isAnswered) {
                             selectedOption = option
